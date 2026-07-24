@@ -28,7 +28,7 @@ export function ShopTheLook({ product }: { product: Product }) {
           </div>
         </div>
 
-        <div className="shop-look__panel" data-reveal>
+        <div className="shop-look__panel">
           <p className="eyebrow">Shop the look</p>
           <h2>{product.name}</h2>
           <p className="shop-look__price">

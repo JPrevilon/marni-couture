@@ -1,14 +1,28 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
 import { useCart } from "@/components/cart/cart-provider";
 import { siteConfig } from "@/content/site";
 
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const { itemCount, toggleCart } = useCart();
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setMenuOpen(false);
+      menuButton.current?.focus();
+    }
+
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [menuOpen]);
 
   return (
     <header className="site-header">
@@ -22,6 +36,7 @@ export function SiteHeader() {
       </Link>
 
       <nav
+        id="primary-navigation"
         className="site-header__nav"
         aria-label="Primary navigation"
         data-open={menuOpen}
@@ -55,8 +70,10 @@ export function SiteHeader() {
           Bag <span>{itemCount}</span>
         </button>
         <button
+          ref={menuButton}
           type="button"
           className="site-header__menu"
+          aria-controls="primary-navigation"
           aria-expanded={menuOpen}
           aria-label={menuOpen ? "Close menu" : "Open menu"}
           onClick={() => setMenuOpen((current) => !current)}

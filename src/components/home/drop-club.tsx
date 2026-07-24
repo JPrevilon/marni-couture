@@ -50,12 +50,16 @@ export function DropClub() {
   }
 
   return (
-    <section className="drop-club section-shell" id="drop-club">
+    <section
+      className="drop-club section-shell"
+      id="drop-club"
+      data-drop-club
+    >
       <div className="drop-club__inner section-shell__inner">
         <div className="drop-club__mark" data-reveal>
           <BrandLogo variant="monogram" />
         </div>
-        <div className="drop-club__content" data-reveal>
+        <div className="drop-club__content">
           <p className="eyebrow">Drop club</p>
           <h2>Get the next drop before the feed does.</h2>
           <p>

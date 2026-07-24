@@ -34,6 +34,7 @@ export function ProductCard({
           href={`/products/${product.handle}`}
           className="product-card__image"
           aria-label={`View ${product.name}`}
+          data-product-image
         >
           <Image
             src={product.image}

@@ -15,6 +15,24 @@ import { SocialShowroom } from "@/components/home/social-showroom";
 import type { Product } from "@/content/products";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 
+type NavigatorWithPerformanceHints = Navigator & {
+  connection?: {
+    saveData?: boolean;
+  };
+  deviceMemory?: number;
+};
+
+function prefersLowPowerMotion() {
+  const navigatorWithHints = navigator as NavigatorWithPerformanceHints;
+
+  return Boolean(
+    navigatorWithHints.connection?.saveData ||
+      (navigatorWithHints.deviceMemory &&
+        navigatorWithHints.deviceMemory <= 4) ||
+      navigator.hardwareConcurrency <= 4,
+  );
+}
+
 export function HomeExperience({
   products,
 }: {
@@ -27,19 +45,39 @@ export function HomeExperience({
     if (!root.current) return;
 
     gsap.registerPlugin(ScrollTrigger);
-
-    if (reduceMotion) {
-      gsap.set(
-        root.current.querySelectorAll(
-          "[data-reveal], [data-runway-look], [data-hero-logo], [data-hero-copy], [data-hero-actions], [data-hero-note]",
-        ),
-        { clearProps: "all", autoAlpha: 1 },
-      );
-      return;
-    }
-
+    const motionRoot = root.current;
+    const lowPower = !reduceMotion && prefersLowPowerMotion();
+    motionRoot.dataset.motion = reduceMotion
+      ? "reduced"
+      : lowPower
+        ? "low"
+        : "full";
     const media = gsap.matchMedia();
+
     const context = gsap.context(() => {
+      const looks = gsap.utils.toArray<HTMLElement>(
+        "[data-runway-look]",
+        motionRoot,
+      );
+
+      function exposeAllLooks() {
+        looks.forEach((look) => {
+          look.inert = false;
+          look.setAttribute("aria-hidden", "false");
+        });
+      }
+
+      if (reduceMotion) {
+        exposeAllLooks();
+        gsap.set(
+          motionRoot.querySelectorAll(
+          "[data-reveal], [data-runway-look], [data-hero-logo], [data-hero-copy], [data-hero-actions], [data-hero-note]",
+          ),
+          { clearProps: "all", autoAlpha: 1 },
+        );
+        return;
+      }
+
       gsap
         .timeline({ defaults: { ease: "power3.out" } })
         .from("[data-hero-logo]", {
@@ -76,8 +114,8 @@ export function HomeExperience({
         );
 
       gsap.to("[data-hero-media]", {
-        yPercent: 16,
-        scale: 1.08,
+        yPercent: lowPower ? 7 : 14,
+        scale: lowPower ? 1.035 : 1.07,
         ease: "none",
         scrollTrigger: {
           trigger: "[data-hero]",
@@ -97,7 +135,7 @@ export function HomeExperience({
           element,
           {
             autoAlpha: 0,
-            y: 54,
+            y: lowPower ? 28 : 48,
           },
           {
             autoAlpha: 1,
@@ -113,42 +151,36 @@ export function HomeExperience({
         );
       });
 
-      gsap.to("[data-trail-pink]", {
-        xPercent: 42,
-        yPercent: 110,
-        rotation: 16,
-        ease: "none",
-        scrollTrigger: {
-          trigger: root.current,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 1.2,
-        },
+      const trailSpecs = lowPower
+        ? [{ target: "[data-trail-pink]", x: 18, y: 80, scrub: 1 }]
+        : [
+            { target: "[data-trail-pink]", x: 32, y: 110, scrub: 1.15 },
+            { target: "[data-trail-violet]", x: -32, y: 165, scrub: 1.35 },
+            { target: "[data-trail-blue]", x: 22, y: 230, scrub: 1.55 },
+          ];
+
+      trailSpecs.forEach(({ target, x, y, scrub }) => {
+        gsap.to(target, {
+          xPercent: x,
+          yPercent: y,
+          ease: "none",
+          scrollTrigger: {
+            trigger: motionRoot,
+            start: "top top",
+            end: "bottom bottom",
+            scrub,
+          },
+        });
       });
 
-      gsap.to("[data-trail-violet]", {
-        xPercent: -48,
-        yPercent: 170,
-        rotation: -22,
+      gsap.to(".chromatic-trail span", {
+        opacity: 0,
         ease: "none",
         scrollTrigger: {
-          trigger: root.current,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 1.45,
-        },
-      });
-
-      gsap.to("[data-trail-blue]", {
-        xPercent: 24,
-        yPercent: 245,
-        rotation: 28,
-        ease: "none",
-        scrollTrigger: {
-          trigger: root.current,
-          start: "top top",
-          end: "bottom bottom",
-          scrub: 1.8,
+          trigger: "[data-drop-club]",
+          start: "top 85%",
+          end: "top 35%",
+          scrub: true,
         },
       });
 
@@ -159,15 +191,22 @@ export function HomeExperience({
         const stage = root.current?.querySelector<HTMLElement>(
           "[data-runway-stage]",
         );
-        const looks = gsap.utils.toArray<HTMLElement>(
-          "[data-runway-look]",
-          root.current,
-        );
         const meter = root.current?.querySelector<HTMLElement>(
           ".living-runway__meter span",
         );
 
         if (!runway || !stage || looks.length < 2) return;
+
+        let activeLook = -1;
+        const setActiveLook = (index: number) => {
+          if (index === activeLook) return;
+          activeLook = index;
+          looks.forEach((look, lookIndex) => {
+            const active = lookIndex === index;
+            look.inert = !active;
+            look.setAttribute("aria-hidden", String(!active));
+          });
+        };
 
         gsap.set(looks, {
           autoAlpha: 0,
@@ -180,9 +219,17 @@ export function HomeExperience({
           scale: 1,
         });
         if (meter) gsap.set(meter, { scaleX: 0 });
+        setActiveLook(0);
 
         const timeline = gsap.timeline({
           defaults: { ease: "none" },
+          onUpdate: () => {
+            const index = Math.min(
+              looks.length - 1,
+              Math.round(timeline.progress() * (looks.length - 1)),
+            );
+            setActiveLook(index);
+          },
           scrollTrigger: {
             trigger: runway,
             start: "top top",
@@ -237,6 +284,33 @@ export function HomeExperience({
               position + 0.1,
             );
         });
+
+        if (!lowPower) {
+          gsap.utils
+            .toArray<HTMLElement>("[data-product-image]", motionRoot)
+            .forEach((image) => {
+              const mediaElement = image.querySelector("img");
+              if (!mediaElement) return;
+
+              gsap.fromTo(
+                mediaElement,
+                { yPercent: -3, scale: 1.025 },
+                {
+                  yPercent: 3,
+                  scale: 1.045,
+                  ease: "none",
+                  scrollTrigger: {
+                    trigger: image,
+                    start: "top bottom",
+                    end: "bottom top",
+                    scrub: 0.8,
+                  },
+                },
+              );
+            });
+        }
+
+        return () => exposeAllLooks();
       });
 
       media.add("(max-width: 899px)", () => {
@@ -246,6 +320,8 @@ export function HomeExperience({
             root.current,
           )
           .forEach((look) => {
+            look.inert = true;
+            look.setAttribute("aria-hidden", "true");
             gsap.fromTo(
               look,
               { autoAlpha: 0, y: 44 },
@@ -258,17 +334,23 @@ export function HomeExperience({
                   start: "top 85%",
                   once: true,
                 },
+                onComplete: () => {
+                  look.inert = false;
+                  look.setAttribute("aria-hidden", "false");
+                },
               },
             );
           });
+
+        return () => exposeAllLooks();
       });
 
-      requestAnimationFrame(() => ScrollTrigger.refresh());
-    }, root);
+    }, motionRoot);
 
     return () => {
       media.revert();
       context.revert();
+      motionRoot.removeAttribute("data-motion");
     };
   }, [reduceMotion]);
 
