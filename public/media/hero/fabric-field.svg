@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07070A"/>
+      <stop offset="0.45" stop-color="#170A15"/>
+      <stop offset="1" stop-color="#080816"/>
+    </linearGradient>
+    <radialGradient id="pink" cx="0" cy="0" r="1" gradientTransform="translate(1150 290) rotate(130) scale(760 620)">
+      <stop stop-color="#FF5C9E" stop-opacity=".82"/>
+      <stop offset=".45" stop-color="#824CFF" stop-opacity=".36"/>
+      <stop offset="1" stop-color="#07070A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blue" cx="0" cy="0" r="1" gradientTransform="translate(340 770) rotate(-25) scale(690 460)">
+      <stop stop-color="#2779FF" stop-opacity=".52"/>
+      <stop offset=".55" stop-color="#4CFF78" stop-opacity=".18"/>
+      <stop offset="1" stop-color="#07070A" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="34"/></filter>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/>
+      <feColorMatrix type="saturate" values="0"/>
+      <feComponentTransfer><feFuncA type="table" tableValues="0 .08"/></feComponentTransfer>
+    </filter>
+    <linearGradient id="ribbon" x1="150" y1="90" x2="1450" y2="910" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F1FF3D" stop-opacity=".22"/>
+      <stop offset=".3" stop-color="#FF2F9A" stop-opacity=".58"/>
+      <stop offset=".65" stop-color="#824CFF" stop-opacity=".45"/>
+      <stop offset="1" stop-color="#2779FF" stop-opacity=".18"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#bg)"/>
+  <rect width="1600" height="1000" fill="url(#pink)"/>
+  <rect width="1600" height="1000" fill="url(#blue)"/>
+  <path d="M-80 820C230 650 310 160 690 250c330 78 350 470 720 280 190-98 250-250 330-360" stroke="url(#ribbon)" stroke-width="120" stroke-linecap="round" filter="url(#blur)" opacity=".72"/>
+  <path d="M-50 790C250 650 340 205 700 285c345 76 370 430 720 250 185-95 240-220 300-335" stroke="#FF8AB5" stroke-opacity=".24" stroke-width="2"/>
+  <rect width="1600" height="1000" filter="url(#grain)" opacity=".55"/>
+</svg>
